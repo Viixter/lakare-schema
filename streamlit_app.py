@@ -36,76 +36,72 @@ st.markdown(
     """
     <style>
     :root {
-        --primary-color: #FF8C02;
+        --primary-color: #FF4B4B;
     }
     
     .stApp { background-color: #F0F4F8; }
     
-    /* Markering/Highlight färg */
     ::selection {
-        background-color: #FF8C02 !important;
+        background-color: #FF4B4B !important;
         color: white !important;
     }
     
-    /* Ändra Streamlit standard-element som använder #FF4B4B till #FF8C02 */
     button[kind="primary"] {
-        background-color: #FF8C02 !important;
-        border-color: #FF8C02 !important;
+        background-color: #FF4B4B !important;
+        border-color: #FF4B4B !important;
     }
     button[kind="primary"]:hover {
-        background-color: #E07B00 !important;
-        border-color: #E07B00 !important;
+        background-color: #E33B3B !important;
+        border-color: #E33B3B !important;
     }
     
-    /* Bockrutor (Checkboxes) */
     div[data-testid="stCheckbox"] div[data-checked="true"] {
-        background-color: #FF8C02 !important;
-        border-color: #FF8C02 !important;
+        background-color: #FF4B4B !important;
+        border-color: #FF4B4B !important;
     }
     div[data-testid="stCheckbox"] div[data-checked="true"] svg {
         fill: white !important;
     }
     
-    /* St.error (röda felmeddelanden) */
     div[data-testid="stAlert"][data-baseweb="notification"]:has(svg) {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
-        border: 1px solid #FF8C02 !important;
+        border: 1px solid #FF4B4B !important;
     }
     div[data-testid="stAlert"] svg {
-        fill: #FF8C02 !important;
-        color: #FF8C02 !important;
+        fill: #FF4B4B !important;
+        color: #FF4B4B !important;
     }
     
-    a { color: #FF8C02 !important; }
+    a { color: #FF4B4B !important; }
     
     div.stButton > button:not([kind="header"]) { 
-        background-color: #FF8C02; 
+        background-color: #FF4B4B; 
         color: white; 
         border-radius: 8px; 
         border: none; 
         font-weight: bold; 
     }
     div.stButton > button:not([kind="header"]):hover { 
-        background-color: #E07B00; 
+        background-color: #E33B3B; 
         color: white; 
     }
     
     div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
-        border: 2px solid #FF8C02 !important;
+        border: 2px solid #FF4B4B !important;
         border-radius: 8px !important;
         box-shadow: none !important;
     }
     div.stTextInput input:focus, div.stSelectbox div[data-baseweb="select"] > div:focus-within {
-        border-color: #FF8C02 !important;
-        box-shadow: 0 0 0 1px #FF8C02 !important;
+        border-color: #FF4B4B !important;
+        box-shadow: 0 0 0 1px #FF4B4B !important;
     }
     
     .card-box {
         background-color: #E2ECF5;
         padding: 20px;
         border-radius: 12px;
-        border-left: 5px solid #FF8C02;
+        border-left: 5px solid #FF4B4B;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-bottom: 15px;
     }
@@ -150,7 +146,7 @@ st.markdown(
     }
     div[data-testid="column"] .stButton > button:hover {
         background-color: #F7E5D4 !important;
-        color: #FF8C02 !important;
+        color: #FF4B4B !important;
     }
 
     div[data-testid="stHorizontalBlock"] {

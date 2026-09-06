@@ -32,7 +32,7 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with soft neutral orange tones for sortable items and matching borders
+# Styling with soft neutral orange tones and unified boxes
 st.markdown(
     """
     <style>
@@ -55,9 +55,16 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Styling for the sortable items container and neutral orange styling */
-    div[data-testid="stHorizontalBlock"] {
-        align-items: center;
+    /* Neutral soft container button formatting inside the unified row */
+    div.row-widget.stButton > button {
+        background-color: transparent !important;
+        color: #1E3A5F !important;
+        border: none !important;
+        padding: 0px !important;
+        font-size: 1.1em !important;
+    }
+    div.row-widget.stButton > button:hover {
+        background-color: rgba(0,0,0,0.05) !important;
     }
     </style>
 """,
@@ -178,7 +185,6 @@ with tab2:
   st.write("---")
   st.write("### Nuvarande läkare (Dra och släpp för att ändra ordning):")
 
-  # Prepare items for sort_items component
   current_names = [p["name"] for p in data["physicians"]]
   sort_key = f"sortable_physicians_{len(current_names)}"
   sorted_names = sort_items(current_names, key=sort_key)
@@ -194,44 +200,45 @@ with tab2:
 
   if data["physicians"]:
     for i, p in enumerate(list(data["physicians"])):
-      # Neutral orange styled container box per physician
-      with st.container():
-        cols = st.columns([3, 0.6, 0.6])
-        doc_name = p["name"]
+      doc_name = p["name"]
+      is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
-        with cols[0]:
-          # Check if this specific physician is being edited
-          if st.session_state.edit_name_dict.get(doc_name, False):
-            updated_val = st.text_input(
-                "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
-            )
-            if st.button("Spara", key=f"save_btn_{i}"):
-              if updated_val.strip():
-                data["physicians"][i]["name"] = updated_val.strip()
-                save_data(data)
-                st.session_state.edit_name_dict[doc_name] = False
-                st.rerun()
-          else:
-            st.markdown(
-                f"""
-                        <div style="background-color: #FFF3E6; border: 1.5px solid #E6A15C; padding: 8px 12px; border-radius: 8px; font-weight: 500; color: #1E3A5F;">
-                            {doc_name}
-                        </div>
-                        """,
-                unsafe_allow_html=True,
-            )
+      # Unified soft neutral orange container layout embedding name and action buttons
+      col_text, col_edit_btn, col_del_btn = st.columns([5, 0.5, 0.5])
 
-        with cols[1]:
+      with col_text:
+        if is_editing:
+          updated_val = st.text_input(
+              "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
+          )
+        else:
+          st.markdown(
+              f"""
+              <div style="background-color: #FFF3E6; border: 1.5px solid #E6A15C; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
+                  <span>{doc_name}</span>
+              </div>
+              """,
+              unsafe_allow_html=True,
+          )
+
+      with col_edit_btn:
+        if is_editing:
+          if st.button("💾", key=f"save_btn_{i}"):
+            if updated_val.strip():
+              data["physicians"][i]["name"] = updated_val.strip()
+              save_data(data)
+              st.session_state.edit_name_dict[doc_name] = False
+              st.rerun()
+        else:
           if st.button("✏️", key=f"edit_icon_{i}"):
-            current_state = st.session_state.edit_name_dict.get(doc_name, False)
-            st.session_state.edit_name_dict[doc_name] = not current_state
+            st.session_state.edit_name_dict[doc_name] = True
             st.rerun()
 
-        with cols[2]:
-          if st.button("🗑️", key=f"del_icon_{i}"):
-            data["physicians"].pop(i)
-            save_data(data)
-            st.rerun()
+      with col_del_btn:
+        if st.button("🗑️", key=f"del_icon_{i}"):
+          data["physicians"].pop(i)
+          save_data(data)
+          st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 
@@ -240,7 +247,9 @@ with tab3:
   history = data.get("history", {})
   if history:
     selected_week = st.selectbox(
-        "Välj vecka att titta på", sorted(history.keys(), reverse=True)
+        "Välj vecka att titta på",
+        sorted(history.keys(), reverse=True),
+        key="history_week_select",
     )
 
     if st.button("🗑️ Ta bort vald vecka från historiken"):

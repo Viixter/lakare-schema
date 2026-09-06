@@ -37,14 +37,15 @@ st.markdown(
     <style>
     .stApp { background-color: #F0F4F8; }
     
-    div.stButton > button { 
+    /* Standardknappar (som "Generera Schema", "Lägg till") behåller sin orangea färg */
+    div.stButton > button:not([kind="header"]) { 
         background-color: #FF8C00; 
         color: white; 
         border-radius: 8px; 
         border: none; 
         font-weight: bold; 
     }
-    div.stButton > button:hover { 
+    div.stButton > button:not([kind="header"]):hover { 
         background-color: #E07B00; 
         color: white; 
     }
@@ -84,8 +85,8 @@ st.markdown(
         text-overflow: ellipsis;
     }
 
-    /* Breddade knappar med exakt #FFF6EE och centrerade ikoner */
-    div[data-testid="column"] button {
+    /* Tvinga fram #FFF6EE på samtliga kolumnknappar för redigera, radera och spara */
+    div[data-testid="column"] .stButton > button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
         border: none !important;
@@ -99,8 +100,9 @@ st.markdown(
         justify-content: center !important;
         border-radius: 6px !important;
         box-sizing: border-box !important;
+        background-image: none !important;
     }
-    div[data-testid="column"] button:hover {
+    div[data-testid="column"] .stButton > button:hover {
         background-color: #F7E5D4 !important;
         color: #FF8C00 !important;
     }
@@ -271,7 +273,6 @@ with tab2:
                 st.session_state.edit_name_dict[doc_name] = False
                 st.rerun()
         else:
-          # Ökad kolumnbredd för ikonerna så de inte klipps eller visas som vita boxar
           c_edit, c_del, c_name = st.columns([0.35, 0.35, 4])
           with c_edit:
             if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):

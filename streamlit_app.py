@@ -67,39 +67,49 @@ st.markdown(
         color: #1E3A5F;
     }
     
-    /* Physician name container without border */
+    /* Uniform width (~25 characters wide) and exact matching height */
     .physician-card {
         background-color: #FFF6EE;
         border: none;
-        padding: 6px 10px;
+        padding: 0px 10px;
+        height: 38px;
         border-radius: 6px;
         font-weight: 500;
         color: #1E3A5F;
         display: flex;
         align-items: center;
-        width: fit-content;
+        width: 270px;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
-    /* Style action buttons to match #FFF6EE background seamlessly */
+    /* Style action buttons to have identical height, color, and background */
     div[data-testid="column"] div.stButton > button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
         border: none !important;
         box-shadow: none !important;
         font-size: 1.0em !important;
-        padding: 4px 6px !important;
-        min-height: unset !important;
+        height: 38px !important;
+        width: 100% !important;
+        padding: 0px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         border-radius: 6px !important;
+        box-sizing: border-box !important;
     }
     div[data-testid="column"] div.stButton > button:hover {
         background-color: #F7E5D4 !important;
         color: #FF8C00 !important;
     }
 
-    /* Bring columns and elements tightly together */
+    /* Align elements tightly on the same line */
     div[data-testid="stHorizontalBlock"] {
-        align-items: center;
-        gap: 0px !important;
+        align-items: center !important;
+        gap: 2px !important;
     }
     </style>
 """,
@@ -239,7 +249,7 @@ with tab2:
       is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
       if is_editing:
-        c_input, c_save = st.columns([5, 0.4])
+        c_input, c_save = st.columns([4.5, 0.5])
         with c_input:
           updated_val = st.text_input(
               "Redigera namn",
@@ -255,7 +265,7 @@ with tab2:
               st.session_state.edit_name_dict[doc_name] = False
               st.rerun()
       else:
-        c_edit, c_del, c_name = st.columns([0.25, 0.25, 4])
+        c_edit, c_del, c_name = st.columns([0.15, 0.15, 4])
         with c_edit:
           if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
             st.session_state.edit_name_dict[doc_name] = True

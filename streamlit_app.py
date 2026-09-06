@@ -84,7 +84,6 @@ st.markdown(
         text-overflow: ellipsis;
     }
 
-    /* Force button background to match #FFF6EE exactly and center icons */
     div[data-testid="column"] button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
@@ -105,7 +104,6 @@ st.markdown(
         color: #FF8C00 !important;
     }
 
-    /* Tight row alignment */
     div[data-testid="stHorizontalBlock"] {
         align-items: center !important;
         gap: 2px !important;
@@ -208,6 +206,7 @@ with tab1:
             f'<div class="card-box">{content_b}</div>', unsafe_allow_html=True
         )
 
+
 with tab2:
   st.subheader("Masterlista över läkare")
 
@@ -240,47 +239,58 @@ with tab2:
     st.rerun()
 
   st.write("")
-  st.write("### Hantera läkare (Redigera / Ta bort):")
 
-  if data["physicians"]:
-    for i, p in enumerate(list(data["physicians"])):
-      doc_name = p["name"]
-      is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
-      if is_editing:
-        c_input, c_save = st.columns([4.5, 0.5])
-        with c_input:
-          updated_val = st.text_input(
-              "Redigera namn",
-              value=doc_name,
-              key=f"edit_box_{i}",
-              label_visibility="collapsed",
-          )
-        with c_save:
-          if st.button("💾", key=f"save_btn_{i}", help="Spara ändring"):
-            if updated_val.strip():
-              data["physicians"][i]["name"] = updated_val.strip()
-              save_data(data)
-              st.session_state.edit_name_dict[doc_name] = False
+  # Definierar Hantera-listan som ett isolerat fragment för att undvika helsidesomladdningar
+  @st.fragment
+  def render_management_fragment():
+    st.write("### Hantera läkare (Redigera / Ta bort):")
+
+    current_data = load_data()
+    physicians_list = current_data["physicians"]
+
+    if physicians_list:
+      for i, p in enumerate(list(physicians_list)):
+        doc_name = p["name"]
+        is_editing = st.session_state.edit_name_dict.get(doc_name, False)
+
+        if is_editing:
+          c_input, c_save = st.columns([4.5, 0.5])
+          with c_input:
+            updated_val = st.text_input(
+                "Redigera namn",
+                value=doc_name,
+                key=f"edit_box_{i}",
+                label_visibility="collapsed",
+            )
+          with c_save:
+            if st.button("💾", key=f"save_btn_{i}", help="Spara ändring"):
+              if updated_val.strip():
+                current_data["physicians"][i]["name"] = updated_val.strip()
+                save_data(current_data)
+                st.session_state.edit_name_dict[doc_name] = False
+                st.rerun()
+        else:
+          c_edit, c_del, c_name = st.columns([0.15, 0.15, 4])
+          with c_edit:
+            if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
+              st.session_state.edit_name_dict[doc_name] = True
               st.rerun()
-      else:
-        c_edit, c_del, c_name = st.columns([0.15, 0.15, 4])
-        with c_edit:
-          if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
-            st.session_state.edit_name_dict[doc_name] = True
-            st.rerun()
-        with c_del:
-          if st.button("❌", key=f"del_btn_{i}", help="Ta bort läkare"):
-            data["physicians"].pop(i)
-            save_data(data)
-            st.rerun()
-        with c_name:
-          st.markdown(
-              f'<div class="physician-card"><span>{doc_name}</span></div>',
-              unsafe_allow_html=True,
-          )
-  else:
-    st.info("Inga läkare inlagda.")
+          with c_del:
+            if st.button("❌", key=f"del_btn_{i}", help="Ta bort läkare"):
+              current_data["physicians"].pop(i)
+              save_data(current_data)
+              st.rerun()
+          with c_name:
+            st.markdown(
+                f'<div class="physician-card"><span>{doc_name}</span></div>',
+                unsafe_allow_html=True,
+            )
+    else:
+      st.info("Inga läkare inlagda.")
+
+
+  render_management_fragment()
 
 with tab3:
   st.subheader("Aktuell lista & Historik")

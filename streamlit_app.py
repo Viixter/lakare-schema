@@ -32,7 +32,7 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with soft neutral orange tones and inline remove (X) button inside the box
+# Styling with soft neutral orange tones and fully integrated inline remove button
 st.markdown(
     """
     <style>
@@ -55,7 +55,7 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Clean inline buttons for remove X icon */
+    /* Integrated remove button styling inside the single box row */
     div.row-widget.stButton > button {
         background-color: transparent !important;
         color: #1E3A5F !important;
@@ -201,17 +201,18 @@ with tab2:
     for i, p in enumerate(list(data["physicians"])):
       doc_name = p["name"]
       
-      c_main, c_del = st.columns([10, 0.8])
-      with c_main:
+      # Use an inner layout where the text and the delete button share the exact same container border
+      col_box, col_btn = st.columns([10, 0.5])
+      with col_box:
         st.markdown(
             f"""
-            <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 8px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
                 <span>{doc_name}</span>
             </div>
             """,
             unsafe_allow_html=True,
         )
-      with c_del:
+      with col_btn:
         if st.button("❌", key=f"del_icon_{i}"):
           data["physicians"].pop(i)
           save_data(data)

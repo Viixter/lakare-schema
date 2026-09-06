@@ -38,7 +38,7 @@ st.markdown(
     .stApp { background-color: #F0F4F8; }
     
     div.stButton > button:not([kind="header"]) { 
-        background-color: #FF8C00; 
+        background-color: #FF8C02; 
         color: white; 
         border-radius: 8px; 
         border: none; 
@@ -50,7 +50,7 @@ st.markdown(
     }
     
     div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
-        border: 2px solid #FF8C00 !important;
+        border: 2px solid #FF8C02 !important;
         border-radius: 8px !important;
     }
     
@@ -58,7 +58,7 @@ st.markdown(
         background-color: #E2ECF5;
         padding: 20px;
         border-radius: 12px;
-        border-left: 5px solid #FF8C00;
+        border-left: 5px solid #FF8C02;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-bottom: 15px;
     }
@@ -103,7 +103,7 @@ st.markdown(
     }
     div[data-testid="column"] .stButton > button:hover {
         background-color: #F7E5D4 !important;
-        color: #FF8C00 !important;
+        color: #FF8C02 !important;
     }
 
     div[data-testid="stHorizontalBlock"] {

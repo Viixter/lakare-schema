@@ -32,7 +32,7 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with soft neutral orange tones and unified boxes
+# Styling with soft neutral orange tones and inline icons inside the box
 st.markdown(
     """
     <style>
@@ -55,16 +55,18 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Neutral soft container button formatting inside the unified row */
+    /* Clean inline buttons for action icons */
     div.row-widget.stButton > button {
         background-color: transparent !important;
         color: #1E3A5F !important;
         border: none !important;
         padding: 0px !important;
-        font-size: 1.1em !important;
+        font-size: 1em !important;
+        box-shadow: none !important;
     }
     div.row-widget.stButton > button:hover {
-        background-color: rgba(0,0,0,0.05) !important;
+        background-color: transparent !important;
+        color: #FF8C00 !important;
     }
     </style>
 """,
@@ -203,42 +205,40 @@ with tab2:
       doc_name = p["name"]
       is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
-      # Unified soft neutral orange container layout embedding name and action buttons
-      col_text, col_edit_btn, col_del_btn = st.columns([5, 0.5, 0.5])
-
-      with col_text:
-        if is_editing:
+      if is_editing:
+        c1, c2 = st.columns([4, 1])
+        with c1:
           updated_val = st.text_input(
               "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
           )
-        else:
-          st.markdown(
-              f"""
-              <div style="background-color: #FFF3E6; border: 1.5px solid #E6A15C; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
-                  <span>{doc_name}</span>
-              </div>
-              """,
-              unsafe_allow_html=True,
-          )
-
-      with col_edit_btn:
-        if is_editing:
+        with c2:
           if st.button("💾", key=f"save_btn_{i}"):
             if updated_val.strip():
               data["physicians"][i]["name"] = updated_val.strip()
               save_data(data)
               st.session_state.edit_name_dict[doc_name] = False
               st.rerun()
-        else:
+      else:
+        # Unified box containing name and inline action icons at the right edge
+        c_main, c_edit, c_del = st.columns([6, 0.4, 0.4])
+        with c_main:
+          st.markdown(
+              f"""
+              <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
+                  <span>{doc_name}</span>
+              </div>
+              """,
+              unsafe_allow_html=True,
+          )
+        with c_edit:
           if st.button("✏️", key=f"edit_icon_{i}"):
             st.session_state.edit_name_dict[doc_name] = True
             st.rerun()
-
-      with col_del_btn:
-        if st.button("🗑️", key=f"del_icon_{i}"):
-          data["physicians"].pop(i)
-          save_data(data)
-          st.rerun()
+        with c_del:
+          if st.button("🗑️", key=f"del_icon_{i}"):
+            data["physicians"].pop(i)
+            save_data(data)
+            st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 

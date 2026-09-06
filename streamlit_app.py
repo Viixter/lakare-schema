@@ -37,6 +37,18 @@ st.markdown(
     <style>
     .stApp { background-color: #F0F4F8; }
     
+    /* Ändra Streamlit standard-element som använder #FF4B4B till #FF8C02 */
+    button[kind="primary"] {
+        background-color: #FF8C02 !important;
+        border-color: #FF8C02 !important;
+    }
+    button[kind="primary"]:hover {
+        background-color: #E07B00 !important;
+        border-color: #E07B00 !important;
+    }
+    
+    a { color: #FF8C02 !important; }
+    
     div.stButton > button:not([kind="header"]) { 
         background-color: #FF8C02; 
         color: white; 

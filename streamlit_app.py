@@ -67,7 +67,6 @@ st.markdown(
         color: #1E3A5F;
     }
     
-    /* Uniform width (~25 characters wide) and exact matching height */
     .physician-card {
         background-color: #FFF6EE;
         border: none;
@@ -85,13 +84,13 @@ st.markdown(
         text-overflow: ellipsis;
     }
 
-    /* Style action buttons to have identical height, color, and background */
-    div[data-testid="column"] div.stButton > button {
+    /* Force button background to match #FFF6EE exactly and center icons */
+    div[data-testid="column"] button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
         border: none !important;
         box-shadow: none !important;
-        font-size: 1.0em !important;
+        font-size: 1.1em !important;
         height: 38px !important;
         width: 100% !important;
         padding: 0px !important;
@@ -101,12 +100,12 @@ st.markdown(
         border-radius: 6px !important;
         box-sizing: border-box !important;
     }
-    div[data-testid="column"] div.stButton > button:hover {
+    div[data-testid="column"] button:hover {
         background-color: #F7E5D4 !important;
         color: #FF8C00 !important;
     }
 
-    /* Align elements tightly on the same line */
+    /* Tight row alignment */
     div[data-testid="stHorizontalBlock"] {
         align-items: center !important;
         gap: 2px !important;

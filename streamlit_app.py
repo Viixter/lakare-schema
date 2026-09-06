@@ -84,6 +84,7 @@ st.markdown(
         text-overflow: ellipsis;
     }
 
+    /* Breddade knappar med exakt #FFF6EE och centrerade ikoner */
     div[data-testid="column"] button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
@@ -106,7 +107,7 @@ st.markdown(
 
     div[data-testid="stHorizontalBlock"] {
         align-items: center !important;
-        gap: 2px !important;
+        gap: 4px !important;
     }
     </style>
 """,
@@ -241,7 +242,6 @@ with tab2:
   st.write("")
 
 
-  # Definierar Hantera-listan som ett isolerat fragment för att undvika helsidesomladdningar
   @st.fragment
   def render_management_fragment():
     st.write("### Hantera läkare (Redigera / Ta bort):")
@@ -255,7 +255,7 @@ with tab2:
         is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
         if is_editing:
-          c_input, c_save = st.columns([4.5, 0.5])
+          c_input, c_save = st.columns([3.8, 0.6])
           with c_input:
             updated_val = st.text_input(
                 "Redigera namn",
@@ -271,7 +271,8 @@ with tab2:
                 st.session_state.edit_name_dict[doc_name] = False
                 st.rerun()
         else:
-          c_edit, c_del, c_name = st.columns([0.15, 0.15, 4])
+          # Ökad kolumnbredd för ikonerna så de inte klipps eller visas som vita boxar
+          c_edit, c_del, c_name = st.columns([0.35, 0.35, 4])
           with c_edit:
             if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
               st.session_state.edit_name_dict[doc_name] = True

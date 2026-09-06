@@ -31,15 +31,15 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with orange outline for text inputs and soft boxed containers
+# Styling with orange outline for text inputs, selectboxes, and soft boxed containers
 st.markdown(
     """
     <style>
     .stApp { background-color: #F0F4F8; }
     div.stButton > button { background-color: #FF8C00; color: white; border-radius: 8px; border: none; font-weight: bold; }
     div.stButton > button:hover { background-color: #E07B00; color: white; }
-    /* Orange border outline for text input boxes */
-    div.stTextInput input {
+    /* Orange border outline for text inputs and selectboxes */
+    div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
         border: 2px solid #FF8C00 !important;
         border-radius: 8px !important;
     }
@@ -156,7 +156,10 @@ with tab1:
 with tab2:
   st.subheader("Masterlista över läkare")
 
-  # Add new physician with orange outline text box
+  # Initialize edit state in session state if missing
+  if "edit_index" not in st.session_state:
+    st.session_state.edit_index = None
+
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
     clean_name = new_name.strip()
@@ -170,21 +173,62 @@ with tab2:
         st.rerun()
 
   st.write("---")
-  st.write("### Nuvarande läkare:")
+  st.write("### Nuvarande läkare (Ändra ordning med pilarna, redigera eller ta bort):")
 
   if data["physicians"]:
     for i, p in enumerate(list(data["physicians"])):
-      col1, col2 = st.columns([5, 1])
-      col1.markdown(
-          f"<p style='padding-top: 8px; font-weight: 500; color:"
-          f" #1E3A5F;'>{p['name']}</p>",
-          unsafe_allow_html=True,
+      col_name, col_up, col_down, col_edit, col_del = st.columns(
+          [4, 0.8, 0.8, 0.8, 0.8]
       )
-      if col2.button("🗑️", key=f"del_icon_{i}"):
-        data["physicians"].pop(i)
-        save_data(data)
-        st.success(f"Tog bort {p['name']}")
-        st.rerun()
+
+      # Check if this item is currently being edited
+      if st.session_state.edit_index == i:
+        with col_name:
+          updated_name = st.text_input(
+              "Redigera", value=p["name"], key=f"edit_input_{i}", label_visibility="collapsed"
+          )
+        with col_edit:
+          if st.button("💾", key=f"save_{i}"):
+            if updated_name.strip():
+              data["physicians"][i]["name"] = updated_name.strip()
+              save_data(data)
+              st.session_state.edit_index = None
+              st.rerun()
+      else:
+        with col_name:
+          st.markdown(
+              f"<p style='padding-top: 8px; font-weight: 500; color:"
+              f" #1E3A5F;'>{p['name']}</p>",
+              unsafe_allow_html=True,
+          )
+        with col_edit:
+          if st.button("✏️", key=f"edit_{i}"):
+            st.session_state.edit_index = i
+            st.rerun()
+
+      with col_up:
+        if i > 0 and st.button("⬆️", key=f"up_{i}"):
+          data["physicians"][i], data["physicians"][i - 1] = (
+              data["physicians"][i - 1],
+              data["physicians"][i],
+          )
+          save_data(data)
+          st.rerun()
+
+      with col_down:
+        if i < len(data["physicians"]) - 1 and st.button("⬇️", key=f"down_{i}"):
+          data["physicians"][i], data["physicians"][i + 1] = (
+              data["physicians"][i + 1],
+              data["physicians"][i],
+          )
+          save_data(data)
+          st.rerun()
+
+      with col_del:
+        if st.button("🗑️", key=f"del_{i}"):
+          data["physicians"].pop(i)
+          save_data(data)
+          st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 

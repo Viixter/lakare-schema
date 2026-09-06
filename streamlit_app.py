@@ -54,18 +54,28 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Inline action buttons styling for layout */
-    div.row-widget.stButton > button {
-        background-color: transparent !important;
-        color: #1E3A5F !important;
-        border: none !important;
-        padding: 0px !important;
-        font-size: 1.1em !important;
-        box-shadow: none !important;
+    /* Styling for clean inline HTML action links */
+    .physician-row {
+        background-color: #FFF6EE;
+        border: 1.5px solid #EED3B8;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-weight: 500;
+        color: #1E3A5F;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
     }
-    div.row-widget.stButton > button:hover {
-        background-color: transparent !important;
-        color: #FF8C00 !important;
+    .physician-actions a {
+        text-decoration: none;
+        font-size: 1.1em;
+        margin-left: 12px;
+        color: #1E3A5F;
+        transition: color 0.2s;
+    }
+    .physician-actions a:hover {
+        color: #FF8C00;
     }
     </style>
 """,
@@ -171,6 +181,28 @@ with tab2:
   if "edit_name_dict" not in st.session_state:
     st.session_state.edit_name_dict = {}
 
+  # Handle actions triggered via query params
+  query_params = st.query_params
+  action = query_params.get("action")
+  target_idx = query_params.get("idx")
+
+  if action and target_idx is not None:
+    try:
+      idx = int(target_idx)
+      if 0 <= idx < len(data["physicians"]):
+        doc_name = data["physicians"][idx]["name"]
+        if action == "edit":
+          st.session_state.edit_name_dict[doc_name] = True
+          st.query_params.clear()
+          st.rerun()
+        elif action == "delete":
+          data["physicians"].pop(idx)
+          save_data(data)
+          st.query_params.clear()
+          st.rerun()
+    except ValueError:
+      pass
+
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
     clean_name = new_name.strip()
@@ -218,26 +250,17 @@ with tab2:
               st.session_state.edit_name_dict[doc_name] = False
               st.rerun()
       else:
-        # Using columns to place the unified container box next to the interactive buttons inside it via HTML/CSS layout simulation
-        c_box, c_pen, c_x = st.columns([10, 0.5, 0.5])
-        with c_box:
-          st.markdown(
-              f"""
-              <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
-                  <span>{doc_name}</span>
-              </div>
-              """,
-              unsafe_allow_html=True,
-          )
-        with c_pen:
-          if st.button("✏️", key=f"edit_icon_{i}"):
-            st.session_state.edit_name_dict[doc_name] = True
-            st.rerun()
-        with c_x:
-          if st.button("❌", key=f"del_icon_{i}"):
-            data["physicians"].pop(i)
-            save_data(data)
-            st.rerun()
+        # Render row completely inside a single HTML container using pure CSS flexbox and integrated action links
+        row_html = f"""
+        <div class="physician-row">
+            <span>{doc_name}</span>
+            <span class="physician-actions">
+                <a href="?action=edit&idx={i}" target="_self" title="Redigera">✏️</a>
+                <a href="?action=delete&idx={i}" target="_self" title="Ta bort">❌</a>
+            </span>
+        </div>
+        """
+        st.markdown(row_html, unsafe_allow_html=True)
   else:
     st.info("Inga läkare inlagda.")
 

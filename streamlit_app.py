@@ -151,41 +151,42 @@ with tab1:
 
 with tab2:
   st.subheader("Masterlista över läkare")
-  new_name = st.text_input("Lägg till ny läkare")
+
+  # Add new physician
+  new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
-    if new_name and not any(
-        p["name"].lower() == new_name.lower() for p in data["physicians"]
-    ):
-      data["physicians"].append({"name": new_name, "active": True})
-      save_data(data)
-      st.success(f"Lagt till {new_name}")
-      st.rerun()
+    clean_name = new_name.strip()
+    if clean_name:
+      if any(p["name"].lower() == clean_name.lower() for p in data["physicians"]):
+        st.error("Läkaren finns redan i listan.")
+      else:
+        data["physicians"].append({"name": clean_name, "active": True})
+        save_data(data)
+        st.success(f"Lagt till {clean_name}")
+        st.rerun()
 
-  st.write(
-      "### Ändra ordning (Dra och släpp) & Ta bort:"
-  )
+  st.write("---")
+  st.write("### Ändra ordning (Dra och släpp) & Ta bort:")
 
-  # Drag and drop component for sorting names
   current_names = [p["name"] for p in data["physicians"]]
-  sorted_names = sort_items(current_names, key="physician_drag_drop")
+  # Use a dynamic key based on length so sortables resets cleanly on add/delete
+  sort_key = f"sortable_list_{len(current_names)}"
+  sorted_names = sort_items(current_names, key=sort_key)
 
-  # If user rearranged elements via drag & drop, update database order
   if sorted_names and sorted_names != current_names:
     name_to_obj = {p["name"]: p for p in data["physicians"]}
     data["physicians"] = [name_to_obj[name] for name in sorted_names]
     save_data(data)
     st.rerun()
 
-  # Delete section for physicians
-  st.write("---")
-  st.write("### Ta bort läkare från listan:")
-  col_del1, col_del2 = st.columns([2, 1])
-  with col_del1:
-    selected_to_delete = st.selectbox(
-        "Välj läkare att ta bort", [p["name"] for p in data["physicians"]]
-    )
-  with col_del2:
+  # Delete section
+  if data["physicians"]:
     st.write("")
+    selected_to_delete = st.selectbox(
+        "Välj läkare att ta bort",
+        [p["name"] for p in data["physicians"]],
+        key="del_doc_select",
+    )
     if st.button("Radera vald"):
       data["physicians"] = [
           p for p in data["physicians"] if p["name"] != selected_to_delete

@@ -35,7 +35,17 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    :root {
+        --primary-color: #FF8C02;
+    }
+    
     .stApp { background-color: #F0F4F8; }
+    
+    /* Markering/Highlight färg */
+    ::selection {
+        background-color: #FF8C02 !important;
+        color: white !important;
+    }
     
     /* Ändra Streamlit standard-element som använder #FF4B4B till #FF8C02 */
     button[kind="primary"] {
@@ -45,6 +55,26 @@ st.markdown(
     button[kind="primary"]:hover {
         background-color: #E07B00 !important;
         border-color: #E07B00 !important;
+    }
+    
+    /* Bockrutor (Checkboxes) */
+    div[data-testid="stCheckbox"] div[data-checked="true"] {
+        background-color: #FF8C02 !important;
+        border-color: #FF8C02 !important;
+    }
+    div[data-testid="stCheckbox"] div[data-checked="true"] svg {
+        fill: white !important;
+    }
+    
+    /* St.error (röda felmeddelanden) */
+    div[data-testid="stAlert"][data-baseweb="notification"]:has(svg) {
+        background-color: #FFF6EE !important;
+        color: #1E3A5F !important;
+        border: 1px solid #FF8C02 !important;
+    }
+    div[data-testid="stAlert"] svg {
+        fill: #FF8C02 !important;
+        color: #FF8C02 !important;
     }
     
     a { color: #FF8C02 !important; }
@@ -64,6 +94,11 @@ st.markdown(
     div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
         border: 2px solid #FF8C02 !important;
         border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+    div.stTextInput input:focus, div.stSelectbox div[data-baseweb="select"] > div:focus-within {
+        border-color: #FF8C02 !important;
+        box-shadow: 0 0 0 1px #FF8C02 !important;
     }
     
     .card-box {

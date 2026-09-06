@@ -80,14 +80,14 @@ st.markdown(
         width: fit-content;
     }
 
-    /* Style all small action buttons (pen, X, floppy disk) to match #FFF6EE background */
+    /* Style action buttons to match #FFF6EE background seamlessly */
     div[data-testid="column"] div.stButton > button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
         border: none !important;
         box-shadow: none !important;
         font-size: 1.0em !important;
-        padding: 4px 8px !important;
+        padding: 4px 6px !important;
         min-height: unset !important;
         border-radius: 6px !important;
     }
@@ -99,7 +99,7 @@ st.markdown(
     /* Bring columns and elements tightly together */
     div[data-testid="stHorizontalBlock"] {
         align-items: center;
-        gap: 2px !important;
+        gap: 0px !important;
     }
     </style>
 """,
@@ -255,12 +255,7 @@ with tab2:
               st.session_state.edit_name_dict[doc_name] = False
               st.rerun()
       else:
-        c_name, c_edit, c_del = st.columns([4, 0.3, 0.3])
-        with c_name:
-          st.markdown(
-              f'<div class="physician-card"><span>{doc_name}</span></div>',
-              unsafe_allow_html=True,
-          )
+        c_edit, c_del, c_name = st.columns([0.25, 0.25, 4])
         with c_edit:
           if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
             st.session_state.edit_name_dict[doc_name] = True
@@ -270,6 +265,11 @@ with tab2:
             data["physicians"].pop(i)
             save_data(data)
             st.rerun()
+        with c_name:
+          st.markdown(
+              f'<div class="physician-card"><span>{doc_name}</span></div>',
+              unsafe_allow_html=True,
+          )
   else:
     st.info("Inga läkare inlagda.")
 

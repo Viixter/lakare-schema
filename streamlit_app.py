@@ -27,14 +27,24 @@ def save_data(data):
     json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-st.set_page_config(page_title="Läkare Schema", page_icon="🩺", layout="centered")
+st.set_page_config(
+    page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
+)
 
-# Styling
+# Styling and soft container boxes
 st.markdown(
     """
     <style>
     .stApp { background-color: #EBF4F6; }
-    .sidebar .sidebar-content { background-color: #BCE0FD; }
+    div.stButton > button { background-color: #007ACC; color: white; border-radius: 8px; border: none; font-weight: bold; }
+    div.stButton > button:hover { background-color: #005f9e; color: white; }
+    .card-box {
+        background-color: #FFFFFF;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        margin-bottom: 15px;
+    }
     </style>
 """,
     unsafe_allow_html=True,
@@ -42,33 +52,43 @@ st.markdown(
 
 data = load_data()
 
-st.title("🩺 Läkare Schema & Bevakning")
+st.title("🩺 Bevakning Gilleberget")
 
 tab1, tab2, tab3 = st.tabs(
-    ["Veckans Schema", "Hantera Läkare", "Historik & Ändra"]
+    ["Veckans Schema", "Hantera Läkare", "Aktuell lista & Historik"]
 )
 
 with tab1:
   st.subheader("Vecko- och närvaroinställningar")
-  week_num = st.text_input("Veckonummer (t.ex. V37)", value="V37")
 
-  st.write("### Aktiva läkare denna vecka:")
+  # Veckonummer input handling (stores as "Vecka XX" in history)
+  week_input = st.text_input("Veckonummer", value="37")
+  week_num = f"Vecka {week_input.strip()}"
+
+  st.markdown("### Bevakande läkare")
   working_status = {}
   for p in data["physicians"]:
-    working_status[p["name"]] = st.checkbox(p["name"], value=True, key=f"w_{p['name']}")
+    working_status[p["name"]] = st.checkbox(
+        p["name"], value=True, key=f"w_{p['name']}"
+    )
 
-  working_physicians = [name for name, active in working_status.items() if active]
+  working_physicians = [
+      name for name, active in working_status.items() if active
+  ]
   absent_physicians = [
       name for name, active in working_status.items() if not active
   ]
 
   needs_monitoring = []
   if absent_physicians:
-    st.write("### Frånvarande läkare (Bevakningsstatus):")
+    st.markdown("### Läkare att bevaka")
+    st.markdown(
+        "<p style='color: #666666; font-size: 0.85em; margin-top: -10px;"
+        " margin-bottom: 10px;'>(Bocka ur läkare som inte behöver bevakas)</p>",
+        unsafe_allow_html=True,
+    )
     for name in absent_physicians:
-      if st.checkbox(
-          f"Kräver bevakning: {name}", value=True, key=f"proxy_{name}"
-      ):
+      if st.checkbox(name, value=True, key=f"proxy_{name}"):
         needs_monitoring.append(name)
 
   if st.button("Generera Schema", type="primary"):
@@ -101,17 +121,31 @@ with tab1:
       save_data(data)
 
       st.success(f"Schema för {week_num} genererat!")
-      st.markdown(f"### {week_num}")
-      st.markdown("**Signerande läkare**")
-      for p, r in final_mapping.items():
-        st.text(f"{p} - {r[0]}-{r[1]}")
 
-      st.markdown("**Läkare som ska bevakas**")
-      if needs_monitoring:
-        for p in needs_monitoring:
-          st.text(p)
-      else:
-        st.text("(Inga)")
+      # Side by side visual layout for screenshot capability
+      st.markdown(f"### {week_num}")
+      col_a, col_b = st.columns(2)
+
+      with col_a:
+        st.markdown(
+            '<div class="card-box"><h4>Signerande läkare</h4>',
+            unsafe_allow_html=True,
+        )
+        for p, r in final_mapping.items():
+          st.text(f"{p} - {r[0]}-{r[1]}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+      with col_b:
+        st.markdown(
+            '<div class="card-box"><h4>Läkare som ska bevakas</h4>',
+            unsafe_allow_html=True,
+        )
+        if needs_monitoring:
+          for p in needs_monitoring:
+            st.text(p)
+        else:
+          st.text("(Inga)")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tab2:
   st.subheader("Masterlista över läkare")
@@ -135,7 +169,7 @@ with tab2:
       st.rerun()
 
 with tab3:
-  st.subheader("Sparad Historik")
+  st.subheader("Aktuell lista & Historik")
   history = data.get("history", {})
   if history:
     selected_week = st.selectbox(
@@ -143,12 +177,29 @@ with tab3:
     )
     if selected_week:
       hw = history[selected_week]
+
       st.markdown(f"### {selected_week}")
-      st.markdown("**Signerande läkare**")
-      for p, r in hw["assignments"].items():
-        st.text(f"{p} - {r[0]}-{r[1]}")
-      st.markdown("**Läkare som skulle bevakas**")
-      for p in hw["proxies"]:
-        st.text(p)
+      col_1, col_2 = st.columns(2)
+
+      with col_1:
+        st.markdown(
+            '<div class="card-box"><h4>Signerande läkare</h4>',
+            unsafe_allow_html=True,
+        )
+        for p, r in hw["assignments"].items():
+          st.text(f"{p} - {r[0]}-{r[1]}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+      with col_2:
+        st.markdown(
+            '<div class="card-box"><h4>Läkare som ska bevakas</h4>',
+            unsafe_allow_html=True,
+        )
+        if hw["proxies"]:
+          for p in hw["proxies"]:
+            st.text(p)
+        else:
+          st.text("(Inga)")
+        st.markdown("</div>", unsafe_allow_html=True)
   else:
     st.info("Ingen historik sparad än.")

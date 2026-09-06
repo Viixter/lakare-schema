@@ -37,7 +37,6 @@ st.markdown(
     <style>
     .stApp { background-color: #F0F4F8; }
     
-    /* Standardknappar (som "Generera Schema", "Lägg till") behåller sin orangea färg */
     div.stButton > button:not([kind="header"]) { 
         background-color: #FF8C00; 
         color: white; 
@@ -83,9 +82,9 @@ st.markdown(
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+        font-size: 1.1em;
     }
 
-    /* Tvinga fram #FFF6EE på samtliga kolumnknappar för redigera, radera och spara */
     div[data-testid="column"] .stButton > button {
         background-color: #FFF6EE !important;
         color: #1E3A5F !important;
@@ -246,7 +245,7 @@ with tab2:
 
   @st.fragment
   def render_management_fragment():
-    st.write("### Hantera läkare (Redigera / Ta bort):")
+    st.write("### Redigera")
 
     current_data = load_data()
     physicians_list = current_data["physicians"]

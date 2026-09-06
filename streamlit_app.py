@@ -1,6 +1,7 @@
 import json
 import os
 import streamlit as st
+from streamlit_sortables import sort_items
 
 DATA_FILE = "physician_data.json"
 
@@ -31,14 +32,13 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with orange outline for text inputs, selectboxes, and soft boxed containers
+# Styling with soft neutral orange tones for sortable items and matching borders
 st.markdown(
     """
     <style>
     .stApp { background-color: #F0F4F8; }
     div.stButton > button { background-color: #FF8C00; color: white; border-radius: 8px; border: none; font-weight: bold; }
     div.stButton > button:hover { background-color: #E07B00; color: white; }
-    /* Orange border outline for text inputs and selectboxes */
     div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
         border: 2px solid #FF8C00 !important;
         border-radius: 8px !important;
@@ -54,6 +54,10 @@ st.markdown(
     .card-box h4 {
         margin-top: 0;
         color: #1E3A5F;
+    }
+    /* Styling for the sortable items container and neutral orange styling */
+    div[data-testid="stHorizontalBlock"] {
+        align-items: center;
     }
     </style>
 """,
@@ -156,9 +160,8 @@ with tab1:
 with tab2:
   st.subheader("Masterlista över läkare")
 
-  # Initialize edit state in session state if missing
-  if "edit_index" not in st.session_state:
-    st.session_state.edit_index = None
+  if "edit_name_dict" not in st.session_state:
+    st.session_state.edit_name_dict = {}
 
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
@@ -173,62 +176,62 @@ with tab2:
         st.rerun()
 
   st.write("---")
-  st.write("### Nuvarande läkare (Ändra ordning med pilarna, redigera eller ta bort):")
+  st.write("### Nuvarande läkare (Dra och släpp för att ändra ordning):")
+
+  # Prepare items for sort_items component
+  current_names = [p["name"] for p in data["physicians"]]
+  sort_key = f"sortable_physicians_{len(current_names)}"
+  sorted_names = sort_items(current_names, key=sort_key)
+
+  if sorted_names and sorted_names != current_names:
+    name_to_obj = {p["name"]: p for p in data["physicians"]}
+    data["physicians"] = [name_to_obj[name] for name in sorted_names]
+    save_data(data)
+    st.rerun()
+
+  st.write("")
+  st.write("### Redigera eller ta bort läkare:")
 
   if data["physicians"]:
     for i, p in enumerate(list(data["physicians"])):
-      col_name, col_up, col_down, col_edit, col_del = st.columns(
-          [4, 0.8, 0.8, 0.8, 0.8]
-      )
+      # Neutral orange styled container box per physician
+      with st.container():
+        cols = st.columns([3, 0.6, 0.6])
+        doc_name = p["name"]
 
-      # Check if this item is currently being edited
-      if st.session_state.edit_index == i:
-        with col_name:
-          updated_name = st.text_input(
-              "Redigera", value=p["name"], key=f"edit_input_{i}", label_visibility="collapsed"
-          )
-        with col_edit:
-          if st.button("💾", key=f"save_{i}"):
-            if updated_name.strip():
-              data["physicians"][i]["name"] = updated_name.strip()
-              save_data(data)
-              st.session_state.edit_index = None
-              st.rerun()
-      else:
-        with col_name:
-          st.markdown(
-              f"<p style='padding-top: 8px; font-weight: 500; color:"
-              f" #1E3A5F;'>{p['name']}</p>",
-              unsafe_allow_html=True,
-          )
-        with col_edit:
-          if st.button("✏️", key=f"edit_{i}"):
-            st.session_state.edit_index = i
+        with cols[0]:
+          # Check if this specific physician is being edited
+          if st.session_state.edit_name_dict.get(doc_name, False):
+            updated_val = st.text_input(
+                "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
+            )
+            if st.button("Spara", key=f"save_btn_{i}"):
+              if updated_val.strip():
+                data["physicians"][i]["name"] = updated_val.strip()
+                save_data(data)
+                st.session_state.edit_name_dict[doc_name] = False
+                st.rerun()
+          else:
+            st.markdown(
+                f"""
+                        <div style="background-color: #FFF3E6; border: 1.5px solid #E6A15C; padding: 8px 12px; border-radius: 8px; font-weight: 500; color: #1E3A5F;">
+                            {doc_name}
+                        </div>
+                        """,
+                unsafe_allow_html=True,
+            )
+
+        with cols[1]:
+          if st.button("✏️", key=f"edit_icon_{i}"):
+            current_state = st.session_state.edit_name_dict.get(doc_name, False)
+            st.session_state.edit_name_dict[doc_name] = not current_state
             st.rerun()
 
-      with col_up:
-        if i > 0 and st.button("⬆️", key=f"up_{i}"):
-          data["physicians"][i], data["physicians"][i - 1] = (
-              data["physicians"][i - 1],
-              data["physicians"][i],
-          )
-          save_data(data)
-          st.rerun()
-
-      with col_down:
-        if i < len(data["physicians"]) - 1 and st.button("⬇️", key=f"down_{i}"):
-          data["physicians"][i], data["physicians"][i + 1] = (
-              data["physicians"][i + 1],
-              data["physicians"][i],
-          )
-          save_data(data)
-          st.rerun()
-
-      with col_del:
-        if st.button("🗑️", key=f"del_{i}"):
-          data["physicians"].pop(i)
-          save_data(data)
-          st.rerun()
+        with cols[2]:
+          if st.button("🗑️", key=f"del_icon_{i}"):
+            data["physicians"].pop(i)
+            save_data(data)
+            st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 

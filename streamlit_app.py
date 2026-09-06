@@ -36,12 +36,25 @@ st.markdown(
     """
     <style>
     .stApp { background-color: #F0F4F8; }
-    div.stButton > button { background-color: #FF8C00; color: white; border-radius: 8px; border: none; font-weight: bold; }
-    div.stButton > button:hover { background-color: #E07B00; color: white; }
+    
+    /* Clean general button styling */
+    div.stButton > button { 
+        background-color: #FF8C00; 
+        color: white; 
+        border-radius: 8px; 
+        border: none; 
+        font-weight: bold; 
+    }
+    div.stButton > button:hover { 
+        background-color: #E07B00; 
+        color: white; 
+    }
+    
     div.stTextInput input, div.stSelectbox div[data-baseweb="select"] > div {
         border: 2px solid #FF8C00 !important;
         border-radius: 8px !important;
     }
+    
     .card-box {
         background-color: #E2ECF5;
         padding: 20px;
@@ -54,33 +67,36 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Compact row wrapper so the box is only as wide as needed, with neat spacing */
-    .physician-row {
+    
+    /* Harmonized compact physician row card */
+    .physician-card {
         background-color: #FFF6EE;
         border: 1.5px solid #EED3B8;
-        padding: 8px 14px;
+        padding: 6px 12px;
         border-radius: 8px;
         font-weight: 500;
         color: #1E3A5F;
-        display: inline-flex;
-        align-items: center;
-        gap: 25px;
-        margin-bottom: 8px;
-        min-width: 280px;
-    }
-    .physician-actions {
         display: flex;
-        gap: 12px;
-        margin-left: auto;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        width: fit-content;
+        min-width: 260px;
     }
-    .physician-actions a {
-        text-decoration: none;
-        font-size: 1.1em;
-        color: #1E3A5F;
-        transition: color 0.2s;
+
+    /* Style Streamlit small action buttons inside rows to blend in smoothly */
+    div[data-testid="column"] div.stButton > button {
+        background-color: transparent !important;
+        color: #1E3A5F !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-size: 1.1em !important;
+        padding: 2px 6px !important;
+        min-height: unset !important;
     }
-    .physician-actions a:hover {
-        color: #FF8C00;
+    div[data-testid="column"] div.stButton > button:hover {
+        background-color: #F7E5D4 !important;
+        color: #D32F2F !important;
     }
     </style>
 """,
@@ -91,46 +107,6 @@ data = load_data()
 
 st.title("🩺 Bevakning Gilleberget")
 
-# Handle tab selection persistence via query params or session state
-if "active_tab" not in st.session_state:
-  st.session_state.active_tab = 0
-
-query_params = st.query_params
-action = query_params.get("action")
-target_idx = query_params.get("idx")
-url_tab = query_params.get("tab")
-
-if url_tab is not None:
-  try:
-    st.session_state.active_tab = int(url_tab)
-  except ValueError:
-    pass
-
-# Handle actions triggered via query params
-if action and target_idx is not None:
-  try:
-    idx = int(target_idx)
-    if 0 <= idx < len(data["physicians"]):
-      doc_name = data["physicians"][idx]["name"]
-      if action == "edit":
-        if "edit_name_dict" not in st.session_state:
-          st.session_state.edit_name_dict = {}
-        st.session_state.edit_name_dict[doc_name] = True
-        st.query_params.clear()
-        st.query_params["tab"] = str(st.session_state.active_tab)
-        st.rerun()
-      elif action == "delete":
-        data["physicians"].pop(idx)
-        save_data(data)
-        st.query_params.clear()
-        st.query_params["tab"] = str(st.session_state.active_tab)
-        st.rerun()
-  except ValueError:
-    pass
-
-# Streamlit tabs implementation. Note: standard st.tabs doesn't accept a default index dynamically,
-# but we can organize layout or keep track. Alternatively, radio buttons can lock the tab,
-# but let's use st.tabs and update query params when tabs are interacted with.
 tab1, tab2, tab3 = st.tabs(
     ["Veckans Schema", "Hantera Läkare", "Aktuell lista & Historik"]
 )
@@ -236,7 +212,6 @@ with tab2:
         data["physicians"].append({"name": clean_name, "active": True})
         save_data(data)
         st.success(f"Lagt till {clean_name}")
-        st.query_params["tab"] = "1"
         st.rerun()
 
   st.write("---")
@@ -250,7 +225,6 @@ with tab2:
     name_to_obj = {p["name"]: p for p in data["physicians"]}
     data["physicians"] = [name_to_obj[name] for name in sorted_names]
     save_data(data)
-    st.query_params["tab"] = "1"
     st.rerun()
 
   st.write("")
@@ -262,34 +236,45 @@ with tab2:
       is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
       if is_editing:
-        c_edit_box, c_save_btn = st.columns([4, 1])
-        with c_edit_box:
+        # Edit mode unified inside a clean matching container card
+        st.markdown(
+            f'<div class="physician-card" style="width: 100%; max-width: 450px;">'
+            f'<span style="font-weight: 500; margin-right: 10px;">Redigera:</span>',
+            unsafe_allow_html=True,
+        )
+        c_input, c_save = st.columns([4, 1])
+        with c_input:
           updated_val = st.text_input(
-              "Redigera",
+              "Redigera namn",
               value=doc_name,
               key=f"edit_box_{i}",
               label_visibility="collapsed",
           )
-        with c_save_btn:
+        with c_save:
           if st.button("💾", key=f"save_btn_{i}"):
             if updated_val.strip():
               data["physicians"][i]["name"] = updated_val.strip()
               save_data(data)
               st.session_state.edit_name_dict[doc_name] = False
-              st.query_params["tab"] = "1"
               st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
       else:
-        # Compact row box container with inline icons at the right
-        row_html = f"""
-        <div class="physician-row">
-            <span>{doc_name}</span>
-            <span class="physician-actions">
-                <a href="?action=edit&idx={i}&tab=1" target="_self" title="Redigera">✏️</a>
-                <a href="?action=delete&idx={i}&tab=1" target="_self" title="Ta bort">❌</a>
-            </span>
-        </div>
-        """
-        st.markdown(row_html, unsafe_allow_html=True)
+        # Normal display row using columns tightly aligned next to each other
+        c_name, c_edit, c_del = st.columns([6, 0.6, 0.6])
+        with c_name:
+          st.markdown(
+              f'<div class="physician-card"><span>{doc_name}</span></div>',
+              unsafe_allow_html=True,
+          )
+        with c_edit:
+          if st.button("✏️", key=f"edit_btn_{i}", help="Redigera namn"):
+            st.session_state.edit_name_dict[doc_name] = True
+            st.rerun()
+        with c_del:
+          if st.button("❌", key=f"del_btn_{i}", help="Ta bort läkare"):
+            data["physicians"].pop(i)
+            save_data(data)
+            st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 
@@ -308,7 +293,6 @@ with tab3:
         del data["history"][selected_week]
         save_data(data)
         st.success(f"Tog bort {selected_week}!")
-        st.query_params["tab"] = "2"
         st.rerun()
 
     if selected_week in history:

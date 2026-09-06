@@ -31,19 +31,24 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling and soft container boxes
+# Styling with updated light-blue & orange color palette and soft boxed containers
 st.markdown(
     """
     <style>
-    .stApp { background-color: #EBF4F6; }
-    div.stButton > button { background-color: #007ACC; color: white; border-radius: 8px; border: none; font-weight: bold; }
-    div.stButton > button:hover { background-color: #005f9e; color: white; }
+    .stApp { background-color: #F0F4F8; }
+    div.stButton > button { background-color: #FF8C00; color: white; border-radius: 8px; border: none; font-weight: bold; }
+    div.stButton > button:hover { background-color: #E07B00; color: white; }
     .card-box {
-        background-color: #FFFFFF;
+        background-color: #E2ECF5;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 5px solid #FF8C00;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-bottom: 15px;
+    }
+    .card-box h4 {
+        margin-top: 0;
+        color: #1E3A5F;
     }
     </style>
 """,
@@ -61,7 +66,6 @@ tab1, tab2, tab3 = st.tabs(
 with tab1:
   st.subheader("Vecko- och närvaroinställningar")
 
-  # Veckonummer input handling (stores as "Vecka XX" in history)
   week_input = st.text_input("Veckonummer", value="37")
   week_num = f"Vecka {week_input.strip()}"
 
@@ -83,8 +87,9 @@ with tab1:
   if absent_physicians:
     st.markdown("### Läkare att bevaka")
     st.markdown(
-        "<p style='color: #666666; font-size: 0.85em; margin-top: -10px;"
-        " margin-bottom: 10px;'>(Bocka ur läkare som inte behöver bevakas)</p>",
+        "<p style='color: #555555; font-size: 0.85em; margin-top: -10px;"
+        " margin-bottom: 10px;'>(Bocka ur läkare som inte behöver"
+        " bevakas)</p>",
         unsafe_allow_html=True,
     )
     for name in absent_physicians:
@@ -110,7 +115,6 @@ with tab1:
         final_mapping[p] = (start, end)
         current_day = end + 1
 
-      # Spara till historik
       data["history"][week_num] = {
           "working": working_physicians,
           "proxies": needs_monitoring,
@@ -122,30 +126,27 @@ with tab1:
 
       st.success(f"Schema för {week_num} genererat!")
 
-      # Side by side visual layout for screenshot capability
       st.markdown(f"### {week_num}")
       col_a, col_b = st.columns(2)
 
       with col_a:
-        st.markdown(
-            '<div class="card-box"><h4>Signerande läkare</h4>',
-            unsafe_allow_html=True,
-        )
+        content_a = "<h4>Signerande läkare</h4>"
         for p, r in final_mapping.items():
-          st.text(f"{p} - {r[0]}-{r[1]}")
-        st.markdown("</div>", unsafe_allow_html=True)
+          content_a += f"<p style='margin: 2px 0;'>{p} - {r[0]}-{r[1]}</p>"
+        st.markdown(
+            f'<div class="card-box">{content_a}</div>', unsafe_allow_html=True
+        )
 
       with col_b:
-        st.markdown(
-            '<div class="card-box"><h4>Läkare som ska bevakas</h4>',
-            unsafe_allow_html=True,
-        )
+        content_b = "<h4>Läkare som ska bevakas</h4>"
         if needs_monitoring:
           for p in needs_monitoring:
-            st.text(p)
+            content_b += f"<p style='margin: 2px 0;'>{p}</p>"
         else:
-          st.text("(Inga)")
-        st.markdown("</div>", unsafe_allow_html=True)
+          content_b += "<p style='margin: 2px 0;'>(Inga)</p>"
+        st.markdown(
+            f'<div class="card-box">{content_b}</div>', unsafe_allow_html=True
+        )
 
 with tab2:
   st.subheader("Masterlista över läkare")
@@ -175,31 +176,36 @@ with tab3:
     selected_week = st.selectbox(
         "Välj vecka att titta på", sorted(history.keys(), reverse=True)
     )
-    if selected_week:
-      hw = history[selected_week]
 
+    if st.button("🗑️ Ta bort vald vecka från historiken"):
+      if selected_week in data["history"]:
+        del data["history"][selected_week]
+        save_data(data)
+        st.success(f"Tog bort {selected_week}!")
+        st.rerun()
+
+    if selected_week in history:
+      hw = history[selected_week]
       st.markdown(f"### {selected_week}")
       col_1, col_2 = st.columns(2)
 
       with col_1:
-        st.markdown(
-            '<div class="card-box"><h4>Signerande läkare</h4>',
-            unsafe_allow_html=True,
-        )
+        content_1 = "<h4>Signerande läkare</h4>"
         for p, r in hw["assignments"].items():
-          st.text(f"{p} - {r[0]}-{r[1]}")
-        st.markdown("</div>", unsafe_allow_html=True)
+          content_1 += f"<p style='margin: 2px 0;'>{p} - {r[0]}-{r[1]}</p>"
+        st.markdown(
+            f'<div class="card-box">{content_1}</div>', unsafe_allow_html=True
+        )
 
       with col_2:
-        st.markdown(
-            '<div class="card-box"><h4>Läkare som ska bevakas</h4>',
-            unsafe_allow_html=True,
-        )
+        content_2 = "<h4>Läkare som ska bevakas</h4>"
         if hw["proxies"]:
           for p in hw["proxies"]:
-            st.text(p)
+            content_2 += f"<p style='margin: 2px 0;'>{p}</p>"
         else:
-          st.text("(Inga)")
-        st.markdown("</div>", unsafe_allow_html=True)
+          content_2 += "<p style='margin: 2px 0;'>(Inga)</p>"
+        st.markdown(
+            f'<div class="card-box">{content_2}</div>', unsafe_allow_html=True
+        )
   else:
     st.info("Ingen historik sparad än.")

@@ -1,7 +1,6 @@
 import json
 import os
 import streamlit as st
-from streamlit_sortables import sort_items
 
 DATA_FILE = "physician_data.json"
 
@@ -32,13 +31,18 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with updated light-blue & orange color palette and soft boxed containers
+# Styling with orange outline for text inputs and soft boxed containers
 st.markdown(
     """
     <style>
     .stApp { background-color: #F0F4F8; }
     div.stButton > button { background-color: #FF8C00; color: white; border-radius: 8px; border: none; font-weight: bold; }
     div.stButton > button:hover { background-color: #E07B00; color: white; }
+    /* Orange border outline for text input boxes */
+    div.stTextInput input {
+        border: 2px solid #FF8C00 !important;
+        border-radius: 8px !important;
+    }
     .card-box {
         background-color: #E2ECF5;
         padding: 20px;
@@ -152,7 +156,7 @@ with tab1:
 with tab2:
   st.subheader("Masterlista över läkare")
 
-  # Add new physician
+  # Add new physician with orange outline text box
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
     clean_name = new_name.strip()
@@ -166,34 +170,23 @@ with tab2:
         st.rerun()
 
   st.write("---")
-  st.write("### Ändra ordning (Dra och släpp) & Ta bort:")
+  st.write("### Nuvarande läkare:")
 
-  current_names = [p["name"] for p in data["physicians"]]
-  # Use a dynamic key based on length so sortables resets cleanly on add/delete
-  sort_key = f"sortable_list_{len(current_names)}"
-  sorted_names = sort_items(current_names, key=sort_key)
-
-  if sorted_names and sorted_names != current_names:
-    name_to_obj = {p["name"]: p for p in data["physicians"]}
-    data["physicians"] = [name_to_obj[name] for name in sorted_names]
-    save_data(data)
-    st.rerun()
-
-  # Delete section
   if data["physicians"]:
-    st.write("")
-    selected_to_delete = st.selectbox(
-        "Välj läkare att ta bort",
-        [p["name"] for p in data["physicians"]],
-        key="del_doc_select",
-    )
-    if st.button("Radera vald"):
-      data["physicians"] = [
-          p for p in data["physicians"] if p["name"] != selected_to_delete
-      ]
-      save_data(data)
-      st.success(f"Tog bort {selected_to_delete}")
-      st.rerun()
+    for i, p in enumerate(list(data["physicians"])):
+      col1, col2 = st.columns([5, 1])
+      col1.markdown(
+          f"<p style='padding-top: 8px; font-weight: 500; color:"
+          f" #1E3A5F;'>{p['name']}</p>",
+          unsafe_allow_html=True,
+      )
+      if col2.button("🗑️", key=f"del_icon_{i}"):
+        data["physicians"].pop(i)
+        save_data(data)
+        st.success(f"Tog bort {p['name']}")
+        st.rerun()
+  else:
+    st.info("Inga läkare inlagda.")
 
 with tab3:
   st.subheader("Aktuell lista & Historik")

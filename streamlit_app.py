@@ -37,7 +37,6 @@ st.markdown(
     <style>
     .stApp { background-color: #F0F4F8; }
     
-    /* Clean general button styling */
     div.stButton > button { 
         background-color: #FF8C00; 
         color: white; 
@@ -68,35 +67,39 @@ st.markdown(
         color: #1E3A5F;
     }
     
-    /* Harmonized compact physician row card */
+    /* Physician name container without border */
     .physician-card {
         background-color: #FFF6EE;
-        border: 1.5px solid #EED3B8;
-        padding: 6px 12px;
-        border-radius: 8px;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
         font-weight: 500;
         color: #1E3A5F;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
         width: fit-content;
-        min-width: 260px;
     }
 
-    /* Style Streamlit small action buttons inside rows to blend in smoothly */
+    /* Style all small action buttons (pen, X, floppy disk) to match #FFF6EE background */
     div[data-testid="column"] div.stButton > button {
-        background-color: transparent !important;
+        background-color: #FFF6EE !important;
         color: #1E3A5F !important;
         border: none !important;
         box-shadow: none !important;
-        font-size: 1.1em !important;
-        padding: 2px 6px !important;
+        font-size: 1.0em !important;
+        padding: 4px 8px !important;
         min-height: unset !important;
+        border-radius: 6px !important;
     }
     div[data-testid="column"] div.stButton > button:hover {
         background-color: #F7E5D4 !important;
-        color: #D32F2F !important;
+        color: #FF8C00 !important;
+    }
+
+    /* Bring columns and elements tightly together */
+    div[data-testid="stHorizontalBlock"] {
+        align-items: center;
+        gap: 2px !important;
     }
     </style>
 """,
@@ -236,13 +239,7 @@ with tab2:
       is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
       if is_editing:
-        # Edit mode unified inside a clean matching container card
-        st.markdown(
-            f'<div class="physician-card" style="width: 100%; max-width: 450px;">'
-            f'<span style="font-weight: 500; margin-right: 10px;">Redigera:</span>',
-            unsafe_allow_html=True,
-        )
-        c_input, c_save = st.columns([4, 1])
+        c_input, c_save = st.columns([5, 0.4])
         with c_input:
           updated_val = st.text_input(
               "Redigera namn",
@@ -251,16 +248,14 @@ with tab2:
               label_visibility="collapsed",
           )
         with c_save:
-          if st.button("💾", key=f"save_btn_{i}"):
+          if st.button("💾", key=f"save_btn_{i}", help="Spara ändring"):
             if updated_val.strip():
               data["physicians"][i]["name"] = updated_val.strip()
               save_data(data)
               st.session_state.edit_name_dict[doc_name] = False
               st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
       else:
-        # Normal display row using columns tightly aligned next to each other
-        c_name, c_edit, c_del = st.columns([6, 0.6, 0.6])
+        c_name, c_edit, c_del = st.columns([4, 0.3, 0.3])
         with c_name:
           st.markdown(
               f'<div class="physician-card"><span>{doc_name}</span></div>',

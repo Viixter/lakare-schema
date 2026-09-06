@@ -32,7 +32,6 @@ st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
 )
 
-# Styling with soft neutral orange tones and fully integrated inline remove button
 st.markdown(
     """
     <style>
@@ -55,7 +54,7 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Integrated remove button styling inside the single box row */
+    /* Inline action buttons styling for layout */
     div.row-widget.stButton > button {
         background-color: transparent !important;
         color: #1E3A5F !important;
@@ -66,7 +65,7 @@ st.markdown(
     }
     div.row-widget.stButton > button:hover {
         background-color: transparent !important;
-        color: #D32F2F !important;
+        color: #FF8C00 !important;
     }
     </style>
 """,
@@ -169,6 +168,9 @@ with tab1:
 with tab2:
   st.subheader("Masterlista över läkare")
 
+  if "edit_name_dict" not in st.session_state:
+    st.session_state.edit_name_dict = {}
+
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
     clean_name = new_name.strip()
@@ -195,28 +197,47 @@ with tab2:
     st.rerun()
 
   st.write("")
-  st.write("### Ta bort läkare:")
+  st.write("### Hantera läkare (Redigera / Ta bort):")
 
   if data["physicians"]:
     for i, p in enumerate(list(data["physicians"])):
       doc_name = p["name"]
-      
-      # Use an inner layout where the text and the delete button share the exact same container border
-      col_box, col_btn = st.columns([10, 0.5])
-      with col_box:
-        st.markdown(
-            f"""
-            <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 8px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
-                <span>{doc_name}</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-      with col_btn:
-        if st.button("❌", key=f"del_icon_{i}"):
-          data["physicians"].pop(i)
-          save_data(data)
-          st.rerun()
+      is_editing = st.session_state.edit_name_dict.get(doc_name, False)
+
+      if is_editing:
+        c_edit_box, c_save_btn = st.columns([5, 1])
+        with c_edit_box:
+          updated_val = st.text_input(
+              "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
+          )
+        with c_save_btn:
+          if st.button("💾", key=f"save_btn_{i}"):
+            if updated_val.strip():
+              data["physicians"][i]["name"] = updated_val.strip()
+              save_data(data)
+              st.session_state.edit_name_dict[doc_name] = False
+              st.rerun()
+      else:
+        # Using columns to place the unified container box next to the interactive buttons inside it via HTML/CSS layout simulation
+        c_box, c_pen, c_x = st.columns([10, 0.5, 0.5])
+        with c_box:
+          st.markdown(
+              f"""
+              <div style="background-color: #FFF6EE; border: 1.5px solid #EED3B8; padding: 10px 14px; border-radius: 8px; font-weight: 500; color: #1E3A5F; display: flex; justify-content: space-between; align-items: center;">
+                  <span>{doc_name}</span>
+              </div>
+              """,
+              unsafe_allow_html=True,
+          )
+        with c_pen:
+          if st.button("✏️", key=f"edit_icon_{i}"):
+            st.session_state.edit_name_dict[doc_name] = True
+            st.rerun()
+        with c_x:
+          if st.button("❌", key=f"del_icon_{i}"):
+            data["physicians"].pop(i)
+            save_data(data)
+            st.rerun()
   else:
     st.info("Inga läkare inlagda.")
 

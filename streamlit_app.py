@@ -1,6 +1,7 @@
 import json
 import os
 import streamlit as st
+from streamlit_sortables import sort_items
 
 DATA_FILE = "physician_data.json"
 
@@ -160,13 +161,37 @@ with tab2:
       st.success(f"Lagt till {new_name}")
       st.rerun()
 
-  st.write("### Nuvarande läkare:")
-  for i, p in enumerate(list(data["physicians"])):
-    col1, col2 = st.columns([3, 1])
-    col1.text(p["name"])
-    if col2.button("Ta bort", key=f"del_{i}"):
-      data["physicians"].pop(i)
+  st.write(
+      "### Ändra ordning (Dra och släpp) & Ta bort:"
+  )
+
+  # Drag and drop component for sorting names
+  current_names = [p["name"] for p in data["physicians"]]
+  sorted_names = sort_items(current_names, key="physician_drag_drop")
+
+  # If user rearranged elements via drag & drop, update database order
+  if sorted_names and sorted_names != current_names:
+    name_to_obj = {p["name"]: p for p in data["physicians"]}
+    data["physicians"] = [name_to_obj[name] for name in sorted_names]
+    save_data(data)
+    st.rerun()
+
+  # Delete section for physicians
+  st.write("---")
+  st.write("### Ta bort läkare från listan:")
+  col_del1, col_del2 = st.columns([2, 1])
+  with col_del1:
+    selected_to_delete = st.selectbox(
+        "Välj läkare att ta bort", [p["name"] for p in data["physicians"]]
+    )
+  with col_del2:
+    st.write("")
+    if st.button("Radera vald"):
+      data["physicians"] = [
+          p for p in data["physicians"] if p["name"] != selected_to_delete
+      ]
       save_data(data)
+      st.success(f"Tog bort {selected_to_delete}")
       st.rerun()
 
 with tab3:

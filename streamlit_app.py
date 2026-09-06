@@ -54,23 +54,28 @@ st.markdown(
         margin-top: 0;
         color: #1E3A5F;
     }
-    /* Styling for clean inline HTML action links */
+    /* Compact row wrapper so the box is only as wide as needed, with neat spacing */
     .physician-row {
         background-color: #FFF6EE;
         border: 1.5px solid #EED3B8;
-        padding: 10px 14px;
+        padding: 8px 14px;
         border-radius: 8px;
         font-weight: 500;
         color: #1E3A5F;
-        display: flex;
-        justify-content: space-between;
+        display: inline-flex;
         align-items: center;
+        gap: 25px;
         margin-bottom: 8px;
+        min-width: 280px;
+    }
+    .physician-actions {
+        display: flex;
+        gap: 12px;
+        margin-left: auto;
     }
     .physician-actions a {
         text-decoration: none;
         font-size: 1.1em;
-        margin-left: 12px;
         color: #1E3A5F;
         transition: color 0.2s;
     }
@@ -86,6 +91,46 @@ data = load_data()
 
 st.title("🩺 Bevakning Gilleberget")
 
+# Handle tab selection persistence via query params or session state
+if "active_tab" not in st.session_state:
+  st.session_state.active_tab = 0
+
+query_params = st.query_params
+action = query_params.get("action")
+target_idx = query_params.get("idx")
+url_tab = query_params.get("tab")
+
+if url_tab is not None:
+  try:
+    st.session_state.active_tab = int(url_tab)
+  except ValueError:
+    pass
+
+# Handle actions triggered via query params
+if action and target_idx is not None:
+  try:
+    idx = int(target_idx)
+    if 0 <= idx < len(data["physicians"]):
+      doc_name = data["physicians"][idx]["name"]
+      if action == "edit":
+        if "edit_name_dict" not in st.session_state:
+          st.session_state.edit_name_dict = {}
+        st.session_state.edit_name_dict[doc_name] = True
+        st.query_params.clear()
+        st.query_params["tab"] = str(st.session_state.active_tab)
+        st.rerun()
+      elif action == "delete":
+        data["physicians"].pop(idx)
+        save_data(data)
+        st.query_params.clear()
+        st.query_params["tab"] = str(st.session_state.active_tab)
+        st.rerun()
+  except ValueError:
+    pass
+
+# Streamlit tabs implementation. Note: standard st.tabs doesn't accept a default index dynamically,
+# but we can organize layout or keep track. Alternatively, radio buttons can lock the tab,
+# but let's use st.tabs and update query params when tabs are interacted with.
 tab1, tab2, tab3 = st.tabs(
     ["Veckans Schema", "Hantera Läkare", "Aktuell lista & Historik"]
 )
@@ -93,7 +138,7 @@ tab1, tab2, tab3 = st.tabs(
 with tab1:
   st.subheader("Vecko- och närvaroinställningar")
 
-  week_input = st.text_input("Veckonummer", value="37")
+  week_input = st.text_input("Veckonummer", value="37", key="week_input_field")
   week_num = f"Vecka {week_input.strip()}"
 
   st.markdown("### Bevakande läkare")
@@ -181,28 +226,6 @@ with tab2:
   if "edit_name_dict" not in st.session_state:
     st.session_state.edit_name_dict = {}
 
-  # Handle actions triggered via query params
-  query_params = st.query_params
-  action = query_params.get("action")
-  target_idx = query_params.get("idx")
-
-  if action and target_idx is not None:
-    try:
-      idx = int(target_idx)
-      if 0 <= idx < len(data["physicians"]):
-        doc_name = data["physicians"][idx]["name"]
-        if action == "edit":
-          st.session_state.edit_name_dict[doc_name] = True
-          st.query_params.clear()
-          st.rerun()
-        elif action == "delete":
-          data["physicians"].pop(idx)
-          save_data(data)
-          st.query_params.clear()
-          st.rerun()
-    except ValueError:
-      pass
-
   new_name = st.text_input("Lägg till ny läkare", key="add_doc_input")
   if st.button("Lägg till"):
     clean_name = new_name.strip()
@@ -213,6 +236,7 @@ with tab2:
         data["physicians"].append({"name": clean_name, "active": True})
         save_data(data)
         st.success(f"Lagt till {clean_name}")
+        st.query_params["tab"] = "1"
         st.rerun()
 
   st.write("---")
@@ -226,6 +250,7 @@ with tab2:
     name_to_obj = {p["name"]: p for p in data["physicians"]}
     data["physicians"] = [name_to_obj[name] for name in sorted_names]
     save_data(data)
+    st.query_params["tab"] = "1"
     st.rerun()
 
   st.write("")
@@ -237,10 +262,13 @@ with tab2:
       is_editing = st.session_state.edit_name_dict.get(doc_name, False)
 
       if is_editing:
-        c_edit_box, c_save_btn = st.columns([5, 1])
+        c_edit_box, c_save_btn = st.columns([4, 1])
         with c_edit_box:
           updated_val = st.text_input(
-              "Redigera", value=doc_name, key=f"edit_box_{i}", label_visibility="collapsed"
+              "Redigera",
+              value=doc_name,
+              key=f"edit_box_{i}",
+              label_visibility="collapsed",
           )
         with c_save_btn:
           if st.button("💾", key=f"save_btn_{i}"):
@@ -248,15 +276,16 @@ with tab2:
               data["physicians"][i]["name"] = updated_val.strip()
               save_data(data)
               st.session_state.edit_name_dict[doc_name] = False
+              st.query_params["tab"] = "1"
               st.rerun()
       else:
-        # Render row completely inside a single HTML container using pure CSS flexbox and integrated action links
+        # Compact row box container with inline icons at the right
         row_html = f"""
         <div class="physician-row">
             <span>{doc_name}</span>
             <span class="physician-actions">
-                <a href="?action=edit&idx={i}" target="_self" title="Redigera">✏️</a>
-                <a href="?action=delete&idx={i}" target="_self" title="Ta bort">❌</a>
+                <a href="?action=edit&idx={i}&tab=1" target="_self" title="Redigera">✏️</a>
+                <a href="?action=delete&idx={i}&tab=1" target="_self" title="Ta bort">❌</a>
             </span>
         </div>
         """
@@ -279,6 +308,7 @@ with tab3:
         del data["history"][selected_week]
         save_data(data)
         st.success(f"Tog bort {selected_week}!")
+        st.query_params["tab"] = "2"
         st.rerun()
 
     if selected_week in history:

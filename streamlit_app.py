@@ -199,9 +199,13 @@ with tab1:
   st.markdown("### Bevakande läkare")
   working_status = {}
   for p in data["physicians"]:
-    working_status[p["name"]] = st.checkbox(
-        p["name"], value=True, key=f"w_{p['name']}"
+    new_active = st.checkbox(
+        p["name"], value=p.get("active", True), key=f"w_{p['name']}"
     )
+    if new_active != p.get("active", True):
+      p["active"] = new_active
+      save_data(data)
+    working_status[p["name"]] = new_active
 
   working_physicians = [
       name for name, active in working_status.items() if active

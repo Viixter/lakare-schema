@@ -206,13 +206,70 @@ with tab1:
       n = len(working_physicians)
       base_size = 31 // n
       remainder = 31 % n
+
+      history = data.get("history", {})
+      recent_weeks = list(history.keys())[-4:]
+      recent_weeks_rev = list(reversed(recent_weeks))
+
+      # 1. Bestäm vilka läkare som ska få extra dagar (+1 dag) baserat på historik
+      def get_extra_day_history(doc_name):
+        history_score = []
+        for w_key in recent_weeks_rev:
+          w_data = history[w_key]
+          assignments = w_data.get("assignments", {})
+          if doc_name in assignments:
+            r = assignments[doc_name]
+            end_day = r[1]
+            days_assigned = end_day - r[0] + 1
+            num_working = len(w_data.get("working", []))
+            w_base = 31 // num_working if num_working > 0 else 0
+
+            score = 1.0 if days_assigned > w_base else 0.0
+            if end_day >= 31:
+              score -= 0.5
+            elif end_day == 30:
+              score -= 0.2
+
+            history_score.append(score)
+          else:
+            history_score.append(0.0)
+        while len(history_score) < 4:
+          history_score.append(0.0)
+        return tuple(history_score)
+
+      sorted_candidates = sorted(
+          working_physicians, key=lambda p: get_extra_day_history(p)
+      )
+      extra_receivers = set(sorted_candidates[:remainder])
+
+      # 2. Sortera arbetande läkare utifrån vilket startdatum de hade senast
+      master_names = [p["name"] for p in data["physicians"]]
+
+      def get_last_start_day(doc_name):
+        for week_idx, w_key in enumerate(recent_weeks_rev):
+          assignments = history[w_key].get("assignments", {})
+          if doc_name in assignments:
+            # Returnerar (hur många veckor sedan, startdatum)
+            return (week_idx, assignments[doc_name][0])
+        # Om läkaren inte har arbetat senaste 4 veckorna -> placera utifrån masterlistans ordning
+        m_idx = (
+            master_names.index(doc_name) if doc_name in master_names else 999
+        )
+        return (99, m_idx)
+
+      ordered_working_physicians = sorted(
+          working_physicians, key=get_last_start_day
+      )
+
+      # 3. Beräkna datumintervall baserat på den nya sorterade ordningen
       sizes = [
-          base_size + 1 if i < remainder else base_size for i in range(n)
+          base_size + 1 if p in extra_receivers else base_size
+          for p in ordered_working_physicians
       ]
 
       current_day = 1
       final_mapping = {}
-      for p, size in zip(working_physicians, sizes):
+      for p, size in zip(ordered_working_physicians, sizes):
         start = current_day
         end = current_day + size - 1
         final_mapping[p] = (start, end)

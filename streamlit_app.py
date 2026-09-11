@@ -176,8 +176,13 @@ tab1, tab2, tab3 = st.tabs(
 with tab1:
   st.subheader("Vecko- och närvaroinställningar")
 
-  week_input = st.text_input("Veckonummer", value="37", key="week_input_field")
-  week_num = f"Vecka {week_input.strip()}"
+  col_w1, col_w2 = st.columns(2)
+  with col_w1:
+    week_input = st.text_input("Veckonummer", value="37", key="week_input_field")
+  with col_w2:
+    year_input = st.text_input("År", value="2026", key="year_input_field")
+
+  week_num = f"Vecka {week_input.strip()}, {year_input.strip()}"
 
   st.markdown("### Bevakande läkare")
   working_status = {}
@@ -228,7 +233,7 @@ with tab1:
             end_day = r[1]
             days_assigned = end_day - r[0] + 1
             num_working = len(w_data.get("working", []))
-            w_base = 31 // num_working if num_working > 0 else 0
+            w_base = (31 // num_working) if num_working > 0 else 0
 
             score = 1.0 if days_assigned > w_base else 0.0
             if end_day >= 31:

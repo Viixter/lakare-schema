@@ -1,13 +1,26 @@
-import json
-import os
+import firebase_admin
+from firebase_admin import credentials, firestore
 import streamlit as st
 from streamlit_sortables import sort_items
 
-DATA_FILE = "physician_data.json"
+# --- FIREBASE INIT ---
+if not firebase_admin._apps:
+  fb_credentials = dict(st.secrets["firebase"])
+  fb_credentials["private_key"] = fb_credentials["private_key"].replace(
+      "\\n", "\n"
+  )
+  cred = credentials.Certificate(fb_credentials)
+  firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+DOC_REF = db.collection("gilleberget").document("data")
 
 
 def load_data():
-  if not os.path.exists(DATA_FILE):
+  doc = DOC_REF.get()
+  if doc.exists:
+    return doc.to_dict()
+  else:
     default_data = {
         "physicians": [
             {"name": f"Person {chr(65+i)}", "active": True} for i in range(10)
@@ -16,16 +29,10 @@ def load_data():
     }
     save_data(default_data)
     return default_data
-  try:
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
-  except Exception:
-    return {"physicians": [], "history": {}}
 
 
 def save_data(data):
-  with open(DATA_FILE, "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=4, ensure_ascii=False)
+  DOC_REF.set(data)
 
 
 st.set_page_config(
@@ -211,7 +218,6 @@ with tab1:
       recent_weeks = list(history.keys())[-4:]
       recent_weeks_rev = list(reversed(recent_weeks))
 
-      # 1. Bestäm vilka läkare som ska få extra dagar (+1 dag) baserat på historik
       def get_extra_day_history(doc_name):
         history_score = []
         for w_key in recent_weeks_rev:
@@ -242,16 +248,13 @@ with tab1:
       )
       extra_receivers = set(sorted_candidates[:remainder])
 
-      # 2. Sortera arbetande läkare utifrån vilket startdatum de hade senast
       master_names = [p["name"] for p in data["physicians"]]
 
       def get_last_start_day(doc_name):
         for week_idx, w_key in enumerate(recent_weeks_rev):
           assignments = history[w_key].get("assignments", {})
           if doc_name in assignments:
-            # Returnerar (hur många veckor sedan, startdatum)
             return (week_idx, assignments[doc_name][0])
-        # Om läkaren inte har arbetat senaste 4 veckorna -> placera utifrån masterlistans ordning
         m_idx = (
             master_names.index(doc_name) if doc_name in master_names else 999
         )
@@ -261,7 +264,6 @@ with tab1:
           working_physicians, key=get_last_start_day
       )
 
-      # 3. Beräkna datumintervall baserat på den nya sorterade ordningen
       sizes = [
           base_size + 1 if p in extra_receivers else base_size
           for p in ordered_working_physicians
@@ -274,6 +276,9 @@ with tab1:
         end = current_day + size - 1
         final_mapping[p] = (start, end)
         current_day = end + 1
+
+      if "history" not in data:
+        data["history"] = {}
 
       data["history"][week_num] = {
           "working": working_physicians,
@@ -308,7 +313,6 @@ with tab1:
             f'<div class="card-box">{content_b}</div>', unsafe_allow_html=True
         )
 
-
 with tab2:
   st.subheader("Masterlista över läkare")
 
@@ -341,7 +345,6 @@ with tab2:
     st.rerun()
 
   st.write("")
-
 
   @st.fragment
   def render_management_fragment():
@@ -389,7 +392,6 @@ with tab2:
             )
     else:
       st.info("Inga läkare inlagda.")
-
 
   render_management_fragment()
 

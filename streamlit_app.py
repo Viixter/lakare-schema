@@ -3,37 +3,51 @@ from firebase_admin import credentials, firestore
 import streamlit as st
 from streamlit_sortables import sort_items
 
-# --- FIREBASE INIT ---
-if not firebase_admin._apps:
-  fb_credentials = dict(st.secrets["firebase"])
-  fb_credentials["private_key"] = fb_credentials["private_key"].replace(
-      "\\n", "\n"
-  )
-  cred = credentials.Certificate(fb_credentials)
-  firebase_admin.initialize_app(cred)
+# --- FIREBASE INIT (CACHED) ---
+@st.cache_resource
+def init_firestore():
+  if not firebase_admin._apps:
+    fb_credentials = dict(st.secrets["firebase"])
+    fb_credentials["private_key"] = fb_credentials["private_key"].replace(
+        "\\n", "\n"
+    )
+    cred = credentials.Certificate(fb_credentials)
+    firebase_admin.initialize_app(cred)
+  return firestore.client()
 
-db = firestore.client()
+
+db = init_firestore()
 DOC_REF = db.collection("gilleberget").document("data")
 
 
-def load_data():
-  doc = DOC_REF.get()
-  if doc.exists:
-    return doc.to_dict()
-  else:
-    default_data = {
-        "physicians": [
-            {"name": f"Person {chr(65+i)}", "active": True} for i in range(10)
-        ],
-        "history": {},
-    }
-    save_data(default_data)
-    return default_data
+def load_data_from_db():
+  try:
+    doc = DOC_REF.get()
+    if doc.exists:
+      return doc.to_dict()
+  except Exception as e:
+    st.error(f"Ett fel uppstod vid hämtning från databasen: {e}")
+
+  default_data = {
+      "physicians": [
+          {"name": f"Person {chr(65+i)}", "active": True} for i in range(10)
+      ],
+      "history": {},
+  }
+  save_data(default_data)
+  return default_data
 
 
 def save_data(data):
   DOC_REF.set(data)
+  st.session_state.data = data
 
+
+# Ladda data till session_state vid första start
+if "data" not in st.session_state:
+  st.session_state.data = load_data_from_db()
+
+data = st.session_state.data
 
 st.set_page_config(
     page_title="Bevakning Gilleberget", page_icon="🩺", layout="centered"
@@ -164,8 +178,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
-data = load_data()
 
 st.title("🩺 Bevakning Gilleberget")
 
@@ -355,7 +367,7 @@ with tab2:
   def render_management_fragment():
     st.write("### Redigera")
 
-    current_data = load_data()
+    current_data = st.session_state.data
     physicians_list = current_data["physicians"]
 
     if physicians_list:
